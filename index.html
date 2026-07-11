@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>今日安心籤 · 小六太乙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3ECDA; --paper-deep:#EBE1C8;
+    --ink:#3A3428; --ink-soft:#6E6350;
+    --gold:#C1912F; --gold-deep:#A6791F;
+    --leaf:#7C8A5A; --leaf-deep:#556040;
+    --line:rgba(120,105,75,.22);
+    --shadow:0 18px 40px -18px rgba(80,66,40,.45);
+    --serif:"Noto Serif TC",serif; --sans:"Noto Sans TC",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans); color:var(--ink);
+    background:radial-gradient(120% 80% at 50% -10%, #FBF6E9 0%, var(--paper) 46%, var(--paper-deep) 100%);
+    min-height:100dvh; display:flex; align-items:center; justify-content:center;
+    padding:max(20px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));
+  }
+  .stage{ width:100%; max-width:420px; text-align:center; }
+  .brand{ font-family:var(--serif); font-weight:600; letter-spacing:.14em; color:var(--leaf-deep); font-size:13px; opacity:.85; }
+  .title{ font-family:var(--serif); font-weight:700; font-size:clamp(26px,7vw,32px); letter-spacing:.16em; margin-top:6px; }
+  .title .accent{ color:var(--gold-deep); }
+  .calendar{ margin-top:8px; font-size:12.5px; letter-spacing:.06em; color:var(--ink-soft); }
+
+  .draw{ margin-top:26px; }
+  .tube-wrap{ display:inline-block; cursor:pointer; border:0; background:none; padding:8px; transition:transform .18s ease; }
+  .tube-wrap:active{ transform:translateY(2px); }
+  .tube-img{ height:clamp(200px,44vw,240px); width:auto; display:block; filter:drop-shadow(0 20px 24px rgba(120,90,30,.28)); }
+  .tube-wrap.shaking .tube-img{ animation:shake .5s ease-in-out; }
+  @keyframes shake{ 0%,100%{transform:rotate(0)} 15%{transform:rotate(-7deg)} 30%{transform:rotate(6deg)} 45%{transform:rotate(-5deg)} 60%{transform:rotate(4deg)} 75%{transform:rotate(-2deg)} }
+  .hint{ margin-top:16px; font-size:14px; color:var(--ink-soft); letter-spacing:.04em; }
+  .breathe{ animation:breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe{ 0%,100%{opacity:.55} 50%{opacity:1} }
+
+  .result{ display:none; margin-top:28px; }
+  .card{
+    position:relative; border-radius:20px; overflow:hidden;
+    background-image:url("qian_result.jpg"); background-size:cover; background-position:center;
+    box-shadow:var(--shadow); text-align:center; padding:34px 26px 30px;
+  }
+  .card::after{ content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(255,252,244,.12) 0%, rgba(255,251,240,.60) 55%, rgba(255,250,238,.85) 100%); pointer-events:none; }
+  .card > *{ position:relative; z-index:1; }
+
+  .quote{ font-family:var(--serif); font-weight:700; color:var(--ink); font-size:clamp(21px,5.6vw,25px); line-height:1.85; letter-spacing:.05em; }
+  .source{ margin-top:12px; font-family:var(--serif); font-size:14px; color:var(--gold-deep); letter-spacing:.08em; }
+  .divider{ height:1px; background:var(--line); margin:20px auto; width:64px; }
+  .gloss{ font-size:15.5px; line-height:1.9; color:#4A4234; letter-spacing:.01em; }
+
+  .again{ margin-top:16px; font-size:13px; color:var(--ink-soft); }
+  .tagline{ margin-top:22px; font-family:var(--serif); font-size:12.5px; color:var(--leaf-deep); letter-spacing:.1em; opacity:.8; }
+
+  @media (prefers-reduced-motion:reduce){ .tube-wrap.shaking .tube-img{ animation:none } .breathe{ animation:none } }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <h1 class="title">今日<span class="accent">安心</span>籤</h1>
+    <div class="calendar" id="calendar"></div>
+
+    <section class="draw" id="drawFace">
+      <button class="tube-wrap" id="tube" aria-label="搖籤筒抽今日安心籤">
+        <img class="tube-img" src="qian_tube.png" alt="籤筒">
+      </button>
+      <p class="hint breathe" id="hint">搖一支籤，讓今天有一句好話陪著</p>
+    </section>
+
+    <section class="result" id="resultFace">
+      <div class="card">
+        <p class="quote" id="quote"></p>
+        <p class="source" id="source"></p>
+        <div class="divider"></div>
+        <p class="gloss" id="gloss"></p>
+      </div>
+      <p class="again">今天的籤在這裡了，明天可以再搖一支新的。</p>
+    </section>
+  </main>
+
+<script src="qian-data.js"></script>
+<script>
+(function(){
+  var QUOTES = window.QIAN_QUOTES || [];
+  var SEASONAL = window.QIAN_SEASONAL || [];
+
+  function todayKey(){ var d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  var DRAWN_KEY='ri_ri_an_xin_qian_drawn';
+
+  function getDeviceId(){
+    try{ var k='ri_ri_an_xin_device'; var v=localStorage.getItem(k);
+      if(!v){ v=Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem(k,v); }
+      return v;
+    }catch(e){ return 'anon'; }
+  }
+  function currentSeason(){ var m=new Date().getMonth()+1;
+    if(m>=3&&m<=5)return 'spring'; if(m>=6&&m<=8)return 'summer'; if(m>=9&&m<=11)return 'autumn'; return 'winter'; }
+
+  function pool(){
+    var s=currentSeason();
+    var seasonal=SEASONAL.filter(function(q){return q[2]===s;}).map(function(q){return [q[0],q[1],q[3]];});
+    return QUOTES.concat(seasonal);
+  }
+  function seededRng(key){ var a=0; for(var i=0;i<key.length;i++){a=(a*31+key.charCodeAt(i))>>>0;}
+    return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function qianOfToday(){ var p=pool();
+    var rng=seededRng('qian-'+todayKey()+'-'+getDeviceId());
+    return p[Math.floor(rng()*p.length)];
+  }
+
+  function calendarLine(){
+    var d=new Date();
+    var wd=['日','一','二','三','四','五','六'][d.getDay()];
+    return d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日 · 週'+wd;
+  }
+
+  function render(q){
+    document.getElementById('drawFace').style.display='none';
+    document.getElementById('resultFace').style.display='block';
+    document.getElementById('quote').textContent='「'+q[0]+'」';
+    document.getElementById('source').textContent='—— '+q[1];
+    document.getElementById('gloss').textContent=q[2];
+    recordDraw(q);
+  }
+
+  function recordDraw(q){ var ev={ day:todayKey(), quote:q[0], source:q[1] }; void ev; }
+
+  function drawnToday(){ try{ return localStorage.getItem(DRAWN_KEY)===todayKey(); }catch(e){ return false; } }
+  function markDrawn(){ try{ localStorage.setItem(DRAWN_KEY, todayKey()); }catch(e){} }
+
+  document.getElementById('calendar').textContent=calendarLine();
+
+  var tube=document.getElementById('tube');
+  var hint=document.getElementById('hint');
+
+  if(drawnToday()){ render(qianOfToday()); }
+  else{
+    tube.addEventListener('click', function once(){
+      tube.removeEventListener('click', once);
+      tube.classList.add('shaking');
+      hint.classList.remove('breathe'); hint.textContent='籤，正在落下…';
+      markDrawn();
+      setTimeout(function(){ render(qianOfToday()); }, 720);
+    });
+  }
+})();
+</script>
+</body>
+</html>
