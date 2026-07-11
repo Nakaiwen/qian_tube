@@ -59,6 +59,23 @@
   .again{ margin-top:16px; font-size:13px; color:var(--ink-soft); }
   .tagline{ margin-top:22px; font-family:var(--serif); font-size:12.5px; color:var(--leaf-deep); letter-spacing:.1em; opacity:.8; }
 
+  /* 窄版：側欄 iframe（約 300px）時收緊尺寸 */
+  @media (max-width:340px){
+    body{ padding:14px 12px; }
+    .stage{ max-width:100%; }
+    .title{ font-size:24px; letter-spacing:.12em; }
+    .calendar{ font-size:11.5px; margin-top:6px; }
+    .draw{ margin-top:18px; }
+    .tube-img{ height:clamp(150px,52vw,180px); }
+    .hint{ font-size:13px; margin-top:12px; }
+    .result{ margin-top:20px; }
+    .card{ padding:24px 18px 22px; border-radius:16px; }
+    .quote{ font-size:19px; line-height:1.75; }
+    .source{ font-size:13px; margin-top:10px; }
+    .divider{ margin:16px auto; }
+    .gloss{ font-size:14px; line-height:1.85; }
+    .again{ font-size:12px; margin-top:12px; }
+  }
   @media (prefers-reduced-motion:reduce){ .tube-wrap.shaking .tube-img{ animation:none } .breathe{ animation:none } }
 </style>
 </head>
